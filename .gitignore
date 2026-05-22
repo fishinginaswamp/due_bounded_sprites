@@ -366,3 +366,4 @@ FodyWeavers.xsd
 /due_bounded_sprites/due_bounded_sprites.vcxproj
 /due_bounded_sprites/due_bounded_sprites_MARIO.ino
 /due_bounded_sprites/due_bounded_sprites.vcxproj.filters
+/due_bounded_sprites/__vm/.due_bounded_sprites.vsarduino.h
