@@ -361,6 +361,7 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/due_bounded_sprites/__vm/
 /due_bounded_sprites/__vm/Compile.vmps.xml
 /due_bounded_sprites/__vm/Upload.vmps.xml
 /due_bounded_sprites/due_bounded_sprites.vcxproj

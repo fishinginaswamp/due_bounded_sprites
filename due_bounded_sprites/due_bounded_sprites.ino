@@ -1,9 +1,11 @@
-#pragma GCC optimize ("-O0")
+#pragma GCC optimize ("-O3")
 
 #include <SAM3XDUE.h>
-#include <dueprinter.hpp>
 
 #include "scene_manager.hpp"
+
+#include <dueprinter.hpp>
+
 
 const int16_t SCREEN_WIDTH = 320;
 const int16_t SCREEN_HEIGHT = 240;
@@ -99,10 +101,6 @@ uint32_t right_load_index = 0;
 uint32_t left_load_index = 0;
 
 sprite entity_pool[10];
-
-
-
-
 
 
 

@@ -40,14 +40,14 @@ public:
 */
 
 namespace sprite_dma_constants {
-	const uint32_t command_addr = 0x60000000;
-	const uint32_t command_rollover_addr = 0x60FFFFFE;
-	const uint32_t data_addr = 0x61000000;
+	inline const uint32_t command_addr = 0x60000000;
+	inline const uint32_t command_rollover_addr = 0x60FFFFFE;
+	inline const uint32_t data_addr = 0x61000000;
 	//ctrla just needs the size in the lower 16 bits
-	volatile const uint32_t col_addr_set = 0x2A;
-	volatile const uint32_t page_addr_set = 0x2B;
-	volatile const uint32_t mem_write = 0x2C;
-	volatile const uint32_t ctrla_halfword = (0b01 << 24) | (0b01 << 28);
+	inline volatile const uint32_t col_addr_set = 0x2A;
+	inline volatile const uint32_t page_addr_set = 0x2B;
+	inline volatile const uint32_t mem_write = 0x2C;
+	inline volatile const uint32_t ctrla_halfword = (0b01 << 24) | (0b01 << 28);
 }
 
 namespace dma_src_incr_modes {
