@@ -33,7 +33,7 @@ int get_free_ram() {
 }
 
 
-scene_manager scene;
+scene_manager<> scene;
 
 sprite_data<20, 15> mini_torso_data;
 sprite_data<6, 15>  mini_l_leg_data;

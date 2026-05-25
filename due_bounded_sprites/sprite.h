@@ -1,9 +1,13 @@
 #pragma once
+
+#ifndef _DUE_SPRITE_
+#define _DUE_SPRITE_
+
 #include "dma_ll.h"
 #include <initializer_list>
 
-using std::initializer_list;
 
+template <uint32_t MAX_SPRITES, uint32_t MAX_BG_PATCHES>
 class scene_manager;
 class sprite_list;
 class sprite;
@@ -134,11 +138,7 @@ private:
 public:
 
 	sprite_data() {
-#ifdef SAM_16_BIT_LCD_SMC
-		this->buf[0] = 0x002C; // Puts 0x2C on the lower 8 pins!
-#else
 		this->buf[0] = 0x2C00;
-#endif
 		this->buf_offset = buf + 1;
 	}
 
@@ -173,6 +173,7 @@ class sprite_list {
 	friend class dma_draw_list; //so dmac can update the register with the *head sprite
 	friend class sprite; //for sprite::operator>>
 	friend struct sprite_list_iterator;
+	template <uint32_t MAX_SPRITES, uint32_t MAX_BG_PATCHES>
 	friend class scene_manager;
 
 	sprite* volatile head = nullptr;
@@ -191,6 +192,13 @@ public:
 	sprite& back();
 
 	struct sprite_list_iterator {
+		struct forward_iterator_tag {};
+		using iterator_category = forward_iterator_tag;
+		using difference_type = std::ptrdiff_t;
+		using value_type = sprite;
+		using pointer = sprite*;
+		using reference = sprite&;
+
 		sprite* cur;
 		sprite_list_iterator(sprite* s) : cur(s) {}
 		sprite& operator*();
@@ -233,6 +241,7 @@ class sprite : public Renderable {
 	friend class multi_sprite; //for the multi_sprite operator<< (needs the next pointer)
 	friend class dma_draw_list; //so the dma list can update the dmac register with the start of the list
 	friend struct sprite_list_iterator;
+	template <uint32_t MAX_SPRITES, uint32_t MAX_BG_PATCHES>
 	friend class scene_manager;
 
 	/*
@@ -241,21 +250,28 @@ class sprite : public Renderable {
 	*/
 	bounding_box _box, _old_box;
 
-#ifdef SAM_16_BIT_LCD_SMC
-	volatile uint16_t col_data[5];
-	volatile uint16_t page_data[5];
-#else
 	volatile uint16_t col_data[3];
 	volatile uint16_t page_data[3];
-#endif
 
 	sprite* next = nullptr;
 	sprite* prev = nullptr; //only intended to be used in sprite_list::pop_back (which is not there??)
 	volatile lli lli_list[3];
 
-	sprite(volatile uint16_t* data, int16_t x0, int16_t y0, int16_t width, int16_t height);
+	sprite(volatile uint16_t* data, int16_t x0, int16_t y0, int16_t width, int16_t height)
+		: sprite() {
+		int16_t x1 = x0 + width - 1;
+		int16_t y1 = y0 + height - 1;
+
+		this->_box = bounding_box{ x0, y0, x1, y1 };
+		this->_old_box = this->_box;
+
+		this->update_dma_payload(reinterpret_cast<uint32_t>(data), x0, y0, width, height);
+
+		this->wrapper_list << *this;
+	}
 
 	sprite_list wrapper_list;
+
 
 public:
 	sprite();
@@ -338,6 +354,7 @@ public:
 
 class multi_sprite : public Renderable {
 	friend class sprite_list; //for the sprite_list operator<< (needs the sprite_list& list head and tail pointers)
+	template <uint32_t MAX_SPRITES, uint32_t MAX_BG_PATCHES>
 	friend class scene_manager;
 
 	bounding_box _box, _old_box;
@@ -467,4 +484,6 @@ public:
 
 }__attribute__((aligned(4)));
 
+
+#endif
 

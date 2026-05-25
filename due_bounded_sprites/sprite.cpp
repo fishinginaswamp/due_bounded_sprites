@@ -11,16 +11,11 @@ bounding_box::bounding_box(sprite& s) {
 	this->ymin = temp.ymin;
 }
 
+
 sprite::sprite() {
-#ifdef SAM_16_BIT_LCD_SMC
-	this->page_data[0] = 0x002B;
-	this->col_data[0] = 0x002A;
-	const uint8_t xfer_size = 5;
-#else
 	this->page_data[0] = 0x2B00;
 	this->col_data[0] = 0x2A00;
 	const uint8_t xfer_size = 3;
-#endif
 
 	this->lli_list[0] = lli{ reinterpret_cast<uint32_t>(&(this->page_data[0])),
 							 sprite_dma_constants::command_rollover_addr,
@@ -44,6 +39,7 @@ sprite::sprite() {
 	this->prev = nullptr;
 }
 
+/*
 sprite::sprite(volatile uint16_t* data, int16_t x0, int16_t y0, int16_t width, int16_t height) {
 
 	int16_t x1 = x0 + width - 1;
@@ -53,32 +49,15 @@ sprite::sprite(volatile uint16_t* data, int16_t x0, int16_t y0, int16_t width, i
 	this->_old_box = this->_box;
 
 	///format is start then end, high byte first
-#ifdef SAM_16_BIT_LCD_SMC
-	this->page_data[0] = 0x002b;
-	this->page_data[1] = static_cast<uint16_t>(y0) >> 8;
-	this->page_data[2] = static_cast<uint16_t>(y0) & 0xFF;
-	this->page_data[3] = static_cast<uint16_t>(y1) >> 8;
-	this->page_data[4] = static_cast<uint16_t>(y1) & 0xFF;
-
-	this->col_data[0] = 0x002a;
-	this->col_data[1] = static_cast<uint16_t>(x0) >> 8;
-	this->col_data[2] = static_cast<uint16_t>(x0) & 0xFF;
-	this->col_data[3] = static_cast<uint16_t>(x1) >> 8;
-	this->col_data[4] = static_cast<uint16_t>(x1) & 0xFF;
-#else
 	this->page_data[0] = 0x2b00;
 	this->page_data[1] = __builtin_bswap16(static_cast<uint16_t>(y0));
 	this->page_data[2] = __builtin_bswap16(static_cast<uint16_t>(y1));
 	this->col_data[0] = 0x2a00;
 	this->col_data[1] = __builtin_bswap16(static_cast<uint16_t>(x0));
 	this->col_data[2] = __builtin_bswap16(static_cast<uint16_t>(x1));
-#endif
 
-#ifdef SAM_16_BIT_LCD_SMC
-	const uint8_t xfer_size = 5;
-#else
+
 	const uint8_t xfer_size = 3;
-#endif
 
 	this->lli_list[0] = lli{ reinterpret_cast<uint32_t>(&(this->page_data[0])),
 								sprite_dma_constants::command_rollover_addr,
@@ -103,9 +82,8 @@ sprite::sprite(volatile uint16_t* data, int16_t x0, int16_t y0, int16_t width, i
 
 	this->next = nullptr;
 	this->prev = nullptr;
-	this->wrapper_list << *this;
-
 }
+*/
 
 sprite::sprite(const sprite& o) {
 	for (int i = 0; i < 3; ++i) {
@@ -113,9 +91,19 @@ sprite::sprite(const sprite& o) {
 		this->col_data[i] = o.page_data[i];
 	}
 	this->_box = o._box;
+	this->_old_box = o._old_box;
+
+	//the dma lists need to be rebuilt for this instance
 	this->lli_list[0] = o.lli_list[0];
+	this->lli_list[0].saddr = reinterpret_cast<uint32_t>(&(this->page_data[0]));
+	this->lli_list[0].dscr = reinterpret_cast<uint32_t>(&(this->lli_list[1]));
+
 	this->lli_list[1] = o.lli_list[1];
+	this->lli_list[1].saddr = reinterpret_cast<uint32_t>(&(this->col_data[0]));
+	this->lli_list[1].dscr = reinterpret_cast<uint32_t>(&(this->lli_list[2]));
+
 	this->lli_list[2] = o.lli_list[2];
+	this->lli_list[2].dscr = reinterpret_cast<uint32_t>(nullptr);
 
 	this->next = nullptr;
 	this->prev = nullptr;
@@ -176,29 +164,19 @@ void sprite::move_rel(int16_t x, int16_t y) {
 	int16_t x1 = this->_box.xmax + x;
 	int16_t y1 = this->_box.ymax + y;
 
-	this->_old_box = this->_box;
+	//this->_old_box = this->_box;
 
 	this->_box.xmin = x0;
 	this->_box.ymin = y0;
 	this->_box.xmax = x1;
 	this->_box.ymax = y1;
 
-#ifdef SAM_16_BIT_LCD_SMC
-	this->col_data[1] = static_cast<uint16_t>(x0) >> 8;
-	this->col_data[2] = static_cast<uint16_t>(x0) & 0xFF;
-	this->col_data[3] = static_cast<uint16_t>(x1) >> 8;
-	this->col_data[4] = static_cast<uint16_t>(x1) & 0xFF;
 
-	this->page_data[1] = static_cast<uint16_t>(y0) >> 8;
-	this->page_data[2] = static_cast<uint16_t>(y0) & 0xFF;
-	this->page_data[3] = static_cast<uint16_t>(y1) >> 8;
-	this->page_data[4] = static_cast<uint16_t>(y1) & 0xFF;
-#else
 	this->col_data[1] = __builtin_bswap16(static_cast<uint16_t>(x0));
 	this->col_data[2] = __builtin_bswap16(static_cast<uint16_t>(x1));
 	this->page_data[1] = __builtin_bswap16(static_cast<uint16_t>(y0));
 	this->page_data[2] = __builtin_bswap16(static_cast<uint16_t>(y1));
-#endif
+
 }
 
 
@@ -206,24 +184,11 @@ void sprite::update_dma_payload(uint32_t src_addr, int16_t x, int16_t y, int16_t
 	int16_t x1 = x + w - 1;
 	int16_t y1 = y + h - 1;
 
-#ifdef SAM_16_BIT_LCD_SMC
-	this->col_data[1] = static_cast<uint16_t>(x) >> 8;
-	this->col_data[2] = static_cast<uint16_t>(x) & 0xFF;
-	this->col_data[3] = static_cast<uint16_t>(x1) >> 8;
-	this->col_data[4] = static_cast<uint16_t>(x1) & 0xFF;
-
-	this->page_data[1] = static_cast<uint16_t>(y) >> 8;
-	this->page_data[2] = static_cast<uint16_t>(y) & 0xFF;
-	this->page_data[3] = static_cast<uint16_t>(y1) >> 8;
-	this->page_data[4] = static_cast<uint16_t>(y1) & 0xFF;
-	const uint8_t xfer_size = 5;
-#else
 	this->col_data[1] = __builtin_bswap16(static_cast<uint16_t>(x));
 	this->col_data[2] = __builtin_bswap16(static_cast<uint16_t>(x1));
 	this->page_data[1] = __builtin_bswap16(static_cast<uint16_t>(y));
 	this->page_data[2] = __builtin_bswap16(static_cast<uint16_t>(y1));
 	const uint8_t xfer_size = 3;
-#endif
 
 	this->lli_list[0].ctrla = sprite_dma_constants::ctrla_halfword | xfer_size;
 	this->lli_list[1].ctrla = sprite_dma_constants::ctrla_halfword | xfer_size;
@@ -392,29 +357,32 @@ void sprite_list::move_to(int16_t x, int16_t y) {
 }
 
 void sprite_list::clear() {
-	//note: this is probably not OK to use when this list is between two other lists
-	//the underlying lists are not properly re-linked
-	//i added this fix but it is untested
-	
-	if (!this->head) return;
-	/* 
-	// THIS CAUSES A CRASH
-	if (this->head->prev) {
-		if (this->tail->next) {
-			this->head->prev->next = this->tail->next;
-			this->tail->next->prev = this->head->prev;
+		if (!this->head) return;
 
-			// the underlying lists need to be linked
-			//really needs to be tested
-			*(this->head->prev) << *(this->tail->next);
+		sprite* before = this->head->prev;
+		sprite* after = this->tail->next;
+
+		//fix up wapper list
+		if (before) {
+			before->next = after;
+
+			if (after)
+				before->lli_list[2].dscr = reinterpret_cast<uint32_t>(&(after->lli_list[0]));
+			else
+				before->lli_list[2].dscr = reinterpret_cast<uint32_t>(nullptr);
 		}
-		else {
-			this->head->prev->terminate();
+		if (after) {
+			after->prev = before;
 		}
-	}
-	*/
-	this->head = nullptr;
-	this->tail = nullptr;
+
+		//this wraps a wrapper doulby linked list - clear the inner wrapper
+		this->head->prev = nullptr;
+		this->tail->next = nullptr;
+		this->terminate(); //terminate outer lsit
+
+		//clear the "this" wrapper
+		this->head = nullptr;
+		this->tail = nullptr;
 }
 
 void sprite_list::terminate() {
@@ -431,7 +399,7 @@ void dma_draw_list::service_print_list() {
 			this->queue_tail = nullptr;
 		}
 
-		REG_DMAC_DSCR0 = (uint32_t) & (next_to_draw->head->lli_list[0]);
+		REG_DMAC_DSCR0 = reinterpret_cast<uint32_t>(&(next_to_draw->head->lli_list[0]));
 		REG_DMAC_CHER |= 1;
 	}
 }

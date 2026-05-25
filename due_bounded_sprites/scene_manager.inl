@@ -1,10 +1,9 @@
-#include "scene_manager.hpp"
 
 extern dma_draw_list dmac_list;
 extern void lcd_clear();
 
-
-bool scene_manager::add(Renderable* s) {
+template <uint32_t MAX_SPRITES, uint32_t MAX_BG_PATCHES>
+bool scene_manager<MAX_SPRITES, MAX_BG_PATCHES>::add(Renderable* s) {
 	if (sprite_count < MAX_SPRITES) {
 		active_sprites[sprite_count++] = s;
 		return true;
@@ -14,7 +13,8 @@ bool scene_manager::add(Renderable* s) {
 
 // render() runs an insertion sort, so we don't need to preserve order when removing
 // saves a bunch of copies
-void scene_manager::remove(Renderable* s) {
+template <uint32_t MAX_SPRITES, uint32_t MAX_BG_PATCHES>
+void scene_manager<MAX_SPRITES, MAX_BG_PATCHES>::remove(Renderable* s) {
 	for (uint8_t i = 0; i < sprite_count; ++i) {
 		if (active_sprites[i] == s) {
 			active_sprites[i] = active_sprites[sprite_count - 1];
@@ -24,11 +24,13 @@ void scene_manager::remove(Renderable* s) {
 	}
 }
 
-void scene_manager::clear_all() {
+template <uint32_t MAX_SPRITES, uint32_t MAX_BG_PATCHES>
+void scene_manager<MAX_SPRITES, MAX_BG_PATCHES>::clear_all() {
 	sprite_count = 0;
 }
 
-void scene_manager::render() {
+template <uint32_t MAX_SPRITES, uint32_t MAX_BG_PATCHES>
+void scene_manager<MAX_SPRITES, MAX_BG_PATCHES>::render() {
 	if (sprite_count == 0) return;
 
 	while (REG_DMAC_CHSR & 1) {}
@@ -97,8 +99,8 @@ void scene_manager::render() {
 }
 
 
-
-void scene_manager::force_clear() {
+template <uint32_t MAX_SPRITES, uint32_t MAX_BG_PATCHES>
+void scene_manager<MAX_SPRITES, MAX_BG_PATCHES>::force_clear() {
 		while (REG_DMAC_CHSR & 1) {}
 		NVIC_DisableIRQ(DMAC_IRQn);
 
@@ -163,7 +165,8 @@ void scene_manager::force_clear() {
 }
 
 
-void scene_manager::draw_full_background() {
+template <uint32_t MAX_SPRITES, uint32_t MAX_BG_PATCHES>
+void scene_manager<MAX_SPRITES, MAX_BG_PATCHES>::draw_full_background() {
 	if (!current_bg) return;
 
 	while (REG_DMAC_CHSR & 1) {}

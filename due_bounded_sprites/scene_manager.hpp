@@ -4,13 +4,6 @@
 #ifndef SCENE_MANAGER
 #define SCENE_MANAGER
 
-#ifndef SCENE_MAX_SPRITES
-#define SCENE_MAX_SPRITES 100
-#endif
-
-#ifndef SCENE_MAX_BG_PATCHES
-#define SCENE_MAX_BG_PATCHES 300
-#endif
 
 class IBackground {
 public:
@@ -18,7 +11,7 @@ public:
 		sprite_list& patch_list,
 		sprite* pool,
 		uint32_t& pool_i,
-		uint32_t max_patches = SCENE_MAX_BG_PATCHES
+		uint32_t max_patches
 	) = 0;
 
 	virtual ~IBackground() = default;
@@ -75,7 +68,6 @@ public:
 		for (int16_t r = start_row; r <= end_row; ++r) {
 			for (int16_t c = start_col; c <= end_col; ++c) {
 				uint8_t tile_id = grid[r][c];
-				sprite_data<TILE_W,TILE_H>* pixels = tile_palette[tile_id];
 				if (tile_id < PALETTE_SIZE) {
 					sprite_data<TILE_W, TILE_H>* pixels = tile_palette[tile_id];
 					if (pixels != nullptr) {
@@ -103,14 +95,13 @@ private:
 };
 
 
+template <uint32_t MAX_SPRITES = 100, uint32_t MAX_BG_PATCHES = 300>
 class scene_manager {
 private:
-	static const uint32_t MAX_SPRITES = SCENE_MAX_SPRITES;
-	static const uint32_t MAX_BG_PATCHES = SCENE_MAX_BG_PATCHES;
 
 	//we can selectively patch background tiles
 	//using a list so we can add to it asynchronously
-	sprite patch_pool[SCENE_MAX_BG_PATCHES];
+	sprite patch_pool[MAX_BG_PATCHES];
 	sprite_list active_patches;
 	uint32_t patch_count = 0;
 
@@ -143,5 +134,9 @@ public:
 	void render();
 
 };
+
+#include "scene_manager.inl"
+
+
 
 #endif
