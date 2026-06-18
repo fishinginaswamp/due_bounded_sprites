@@ -1,11 +1,15 @@
 #pragma GCC optimize ("-O3")
 
-#include <SAM3XDUE.h>
-
+#include <SAM3XDUE.H>
 #include "scene_manager.hpp"
-
 #include <dueprinter.hpp>
+#include <cstdio>
 
+#include <variant.cpp>
+
+using std::snprintf;
+
+void refresh_logic();
 
 const int16_t SCREEN_WIDTH = 320;
 const int16_t SCREEN_HEIGHT = 240;
@@ -267,6 +271,8 @@ void setup() {
 	mini_robot.move_to(160, 148);
 	scene.add(&mini_robot);
 
+	scene.draw_full_background();
+
 	for (auto& px : dummy_data) px = __builtin_bswap16(0xF800);
 	for (int i = 0; i < 10; ++i) {
 		entity_pool[i].update_dma_payload(dummy_data.dma_ptr(), 0, 0, 16, 16);
@@ -377,7 +383,7 @@ void refresh_logic() {
 		}
 	}
 
-	int32_t new_window = camera_x / WINDOW_WIDTH;
+	int new_window = camera_x / WINDOW_WIDTH;
 	if (new_window > current_window) {
 		snprintf(debug_buffer, 100, "Increase: %d\n", new_window);
 		debug_printer.queue_write(debug_buffer);

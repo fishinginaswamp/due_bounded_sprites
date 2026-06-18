@@ -367,7 +367,7 @@ class multi_sprite : public Renderable {
 public:
 	int16_t width, height;
 	multi_sprite(sprite_list& list, const bounding_box& box) 
-		: list(list), _box(box) {
+		:  _box(box), list(list) {
 		this->height = this->_box.ymax - this->_box.ymin + 1;
 		this->width = this->_box.xmax - this->_box.xmin + 1;
 		this->_old_box = this->_box;

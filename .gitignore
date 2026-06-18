@@ -3,6 +3,17 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+#platformio
+.pio/
+.vscode/
+.pioenvs/
+.piolibdeps/
+*.bin
+*.elf
+*.hex
+*.o
+*.a
+
 # User-specific files
 *.rsuser
 *.suo
