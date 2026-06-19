@@ -5,17 +5,52 @@
 #include <cstdio>
 
 
+#include "player.hpp"
+#include "constants.hpp"
+#include "map.hpp"
+#include "raycast.hpp"
+#include "renderer.hpp"
+
+
 void refresh_logic();
 
 DuePrinter debug_printer;
 static char debug_buffer[100];
+
+//#define DUE_3D_OVERCLOCK_CPU
+#ifdef DUE_3D_OVERCLOCK_CPU
+    #define CPU_FREQ_HZ 114000000UL
+	#define INIT_OVERCLOCK_CPU() overclock_cpu()
+#else
+	#define INIT_OVERCLOCK_CPU()
+    #define CPU_FREQ_HZ 84000000UL
+#endif
+#define TIMER_CLK_FREQ (CPU_FREQ_HZ / 128UL)
+
+
+//from the arduino forums, 114MHz clock (from 84)
+void overclock_cpu(){
+#define SYS_BOARD_PLLAR (CKGR_PLLAR_ONE | CKGR_PLLAR_MULA(18UL) | CKGR_PLLAR_PLLACOUNT(0x3fUL) | CKGR_PLLAR_DIVA(1UL))
+#define SYS_BOARD_MCKR ( PMC_MCKR_PRES_CLK_2 | PMC_MCKR_CSS_PLLA_CLK)
+        
+	/* Set FWS according to SYS_BOARD_MCKR configuration */
+	EFC0->EEFC_FMR = EEFC_FMR_FWS(4); //4 waitstate flash access
+	EFC1->EEFC_FMR = EEFC_FMR_FWS(4);
+
+	/* Initialize PLLA to 114MHz */
+	PMC->CKGR_PLLAR = SYS_BOARD_PLLAR;
+	while (!(PMC->PMC_SR & PMC_SR_LOCKA)) {}
+
+	PMC->PMC_MCKR = SYS_BOARD_MCKR;
+	while (!(PMC->PMC_SR & PMC_SR_MCKRDY)) {}
+}
 
 
 void init_screen_refresh_timer(uint32_t refresh_rate = 60) {
 	pmc_enable_periph_clk(ID_TC3);
 	//mclk/128, wave mode
 	REG_TC1_CMR0 = 3 | (0b10 << 13) | (1 << 15);
-	const uint32_t refresh_count = 656220U / refresh_rate;
+	const uint32_t refresh_count = TIMER_CLK_FREQ / refresh_rate;
 	REG_TC1_RC0 = refresh_count;
 	REG_TC1_IER0 = (1 << 4);
 	REG_TC1_IMR0 = (1 << 4);
