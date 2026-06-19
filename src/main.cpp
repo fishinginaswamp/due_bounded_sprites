@@ -1,11 +1,10 @@
 #pragma GCC optimize ("-O3")
 
+#include <Arduino.h>
 #include <SAM3XDUE.H>
 #include "scene_manager.hpp"
 #include <dueprinter.hpp>
 #include <cstdio>
-
-#include <variant.cpp>
 
 using std::snprintf;
 
