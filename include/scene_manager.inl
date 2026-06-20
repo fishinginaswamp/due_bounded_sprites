@@ -35,24 +35,26 @@ void scene_manager<MAX_SPRITES, MAX_BG_PATCHES>::render() {
 	
 	while (REG_DMAC_CHSR & 1) {}
 	
-	this->active_patches.clear(); //new code in this causes crash
-	this->patch_count = 0;
-	
-	if (this->current_bg) {
-		for (uint8_t i = 0; i < sprite_count; ++i) {
-			// Check if it moved AND if it allows background patching
-			if(active_sprites[i]->is_visible && active_sprites[i]->is_dirty && active_sprites[i]->dirty_bg_restore) {
-				current_bg->patch(
-					active_sprites[i]->get_old_box(),
-					this->active_patches,
-					this->patch_pool,
-					this->patch_count,
-					MAX_BG_PATCHES
-				);
+	if constexpr(MAX_BG_PATCHES > 0) {
+		this->active_patches.clear(); //new code in this causes crash
+		this->patch_count = 0;
+		
+		if (this->current_bg) {
+			for (uint8_t i = 0; i < sprite_count; ++i) {
+				// Check if it moved AND if it allows background patching
+				if(active_sprites[i]->is_visible && active_sprites[i]->is_dirty && active_sprites[i]->dirty_bg_restore) {
+					current_bg->patch(
+						active_sprites[i]->get_old_box(),
+						this->active_patches,
+						this->patch_pool,
+						this->patch_count,
+						MAX_BG_PATCHES
+					);
+				}
 			}
 		}
 	}
-	
+
 	// insertion sort by z_prio
 	for (uint8_t i = 1; i < sprite_count; ++i) {
 		Renderable* key = active_sprites[i];
@@ -84,18 +86,25 @@ void scene_manager<MAX_SPRITES, MAX_BG_PATCHES>::render() {
 		}
 	}
 	
-	if(active_patches.head){
-		if (frame_list.head) {
-			active_patches.tail->lli_list[2].dscr = (uint32_t) &(frame_list.head->lli_list[0]);
-			frame_list.tail->terminate();
-		} else {
-			active_patches.terminate();
+	if constexpr (MAX_BG_PATCHES > 0) {
+		if(active_patches.head){
+			if (frame_list.head) {
+				active_patches.tail->lli_list[2].dscr = (uint32_t) &(frame_list.head->lli_list[0]);
+				frame_list.tail->terminate();
+			} else {
+				active_patches.terminate();
+			}
+			draw_list.add_to_draw_list(&active_patches);
 		}
-		draw_list.add_to_draw_list(&active_patches);
-	}
-	else if (frame_list.head) {
-		frame_list.tail->terminate();
-		draw_list.add_to_draw_list(&frame_list);
+		else if (frame_list.head) {
+			frame_list.tail->terminate();
+			draw_list.add_to_draw_list(&frame_list);
+		}
+	} else {
+		 if (frame_list.head) {
+			frame_list.tail->terminate();
+			draw_list.add_to_draw_list(&frame_list);
+		}
 	}
 	
 	for (uint8_t i = 0; i < sprite_count; ++i) {
@@ -160,29 +169,31 @@ void scene_manager<MAX_SPRITES, MAX_BG_PATCHES>::force_clear() {
 
 template <uint32_t MAX_SPRITES, uint32_t MAX_BG_PATCHES>
 void scene_manager<MAX_SPRITES, MAX_BG_PATCHES>::draw_full_background() {
-	if (!current_bg) return;
-	
-	while (REG_DMAC_CHSR & 1) {}
-	NVIC_DisableIRQ(DMAC_IRQn);
-	
-	this->active_patches.clear();
-	this->patch_count = 0;
-	
-	bounding_box full_screen{ 0, 0, 319, 239 };
-	current_bg->patch(full_screen,
-		this->active_patches,
-		this->patch_pool,
-		this->patch_count,
-		MAX_BG_PATCHES
-	);
-	
-	if (active_patches.head) {
-		active_patches.terminate();
-		draw_list.add_to_draw_list(&active_patches);
+	if constexpr (MAX_BG_PATCHES > 0){
+		if (!current_bg) return;
+		
+		while (REG_DMAC_CHSR & 1) {}
+		NVIC_DisableIRQ(DMAC_IRQn);
+		
+		this->active_patches.clear();		
+		this->patch_count = 0;
+		
+		bounding_box full_screen{ 0, 0, 319, 239 };
+		current_bg->patch(full_screen,
+			this->active_patches,
+			this->patch_pool,
+			this->patch_count,
+			MAX_BG_PATCHES
+		);
+		
+		if (active_patches.head) {
+			active_patches.terminate();
+			draw_list.add_to_draw_list(&active_patches);
+		}
+		
+		volatile uint32_t dummy = REG_DMAC_EBCISR;
+		NVIC_ClearPendingIRQ(DMAC_IRQn);
+		NVIC_EnableIRQ(DMAC_IRQn);
 	}
-	
-	volatile uint32_t dummy = REG_DMAC_EBCISR;
-	NVIC_ClearPendingIRQ(DMAC_IRQn);
-	NVIC_EnableIRQ(DMAC_IRQn);
 }
 

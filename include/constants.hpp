@@ -4,6 +4,7 @@
 #define DUE_DOOM_CONSTANTS
 
 #include <SAM3XDUE.H>
+#include "dma_ll.h"
 
 /*
 #include <iostream>
@@ -48,5 +49,31 @@ template <typename T>
 inline constexpr T due_doom_abs(T val){
     return (val < 0) ? -val : val;
 }
+
+inline uint16_t DMAC_BUFFER_WHITE = 0xffff;
+inline uint16_t DMAC_BUFFER_BLACK = 0x0000;
+
+//16-bit src/dst, 120 transfers
+inline constexpr uint32_t buffer_init_ctrla = (0b01 << 28) | (0b01 << 24) | 120;
+
+//fixed src, incrementing dst, mem2mem
+inline constexpr uint32_t buffer_init_ctrlb = (0b10 << 24);
+
+
+inline lli dmac_floor_clear{reinterpret_cast<uint32_t>(&DMAC_BUFFER_BLACK),
+            0,
+            buffer_init_ctrla,
+            buffer_init_ctrlb,
+            0
+            };
+        
+inline lli dmac_ceiling_clear{reinterpret_cast<uint32_t>(&DMAC_BUFFER_WHITE),
+            0,
+            buffer_init_ctrla,
+            buffer_init_ctrlb,
+            reinterpret_cast<uint32_t>(&dmac_floor_clear)
+            };
+
+        
 
 #endif

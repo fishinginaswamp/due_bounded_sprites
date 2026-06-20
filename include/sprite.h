@@ -146,6 +146,10 @@ public:
 		return reinterpret_cast<uint32_t>(&(this->buf[0]));
 	}
 
+	uint32_t data_ptr() {
+		return reinterpret_cast<uint32_t>(&(this->buf_offset[0]));
+	}
+
 	constexpr uint32_t pixel_count() const {
 		return WIDTH * HEIGHT;
 	}

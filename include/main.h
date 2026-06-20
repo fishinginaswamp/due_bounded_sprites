@@ -10,7 +10,7 @@
 #include "map.hpp"
 #include "raycast.hpp"
 #include "renderer.hpp"
-
+#include "due_doom_sprites.hpp"
 
 void refresh_logic();
 

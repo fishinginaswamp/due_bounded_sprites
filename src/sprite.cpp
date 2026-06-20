@@ -419,10 +419,9 @@ void dma_draw_list::add_to_draw_list(sprite_list* li) {
 	}
 
 	if (!(REG_DMAC_CHSR & 1)) {
-		// interrupt clear to prevent double firing
-		volatile uint32_t dummy = REG_DMAC_EBCISR;
-		NVIC_ClearPendingIRQ(DMAC_IRQn);
-		service_print_list();
+		if(!NVIC_GetPendingIRQ(DMAC_IRQn)){
+			service_print_list();
+		}
 	}
 
 	NVIC_EnableIRQ(DMAC_IRQn);
